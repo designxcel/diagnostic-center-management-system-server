@@ -28,11 +28,32 @@ async function run() {
     // Send a ping to confirm a successful connection
 
     const blogsCollection = client.db("techMed").collection("blogs")
+    const reviewsCollection = client.db("techMed").collection("reviews")
+    const doctorsCollection = client.db("techMed").collection("drlists")
+    const centerCollection = client.db("techMed").collection("center")
 
     //for getting all blogs data endpoint
     app.get('/blogs', async(req,res) => {
         const result = await blogsCollection.find().toArray()
         res.send(result)
+    })
+
+    //for getting all reviews data endpoint
+    app.get('/reviews', async(req,res) => {
+        const result = await reviewsCollection.find().toArray()
+        res.send(result)
+    })
+
+    //for getting doctor list data endpoint
+    app.get('/drlists', async(req, res) => {
+      const result = await doctorsCollection.find().toArray()
+      res.send(result)
+    })
+
+    //for getting center list data endpoint
+    app.get('/center', async(req, res) => {
+      const result = await centerCollection.find().toArray()
+      res.send(result)
     })
 
     await client.db("admin").command({ ping: 1 });
