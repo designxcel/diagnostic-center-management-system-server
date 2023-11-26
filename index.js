@@ -33,6 +33,7 @@ async function run() {
     const centerCollection = client.db("techMed").collection("center")
     const userCollection = client.db("techMed").collection("users")
     const testCollection = client.db("techMed").collection("test")
+    const cartCollection = client.db("techMed").collection("carts")
 
     //for getting all blogs data endpoint
     app.get('/blogs', async(req,res) => {
@@ -116,6 +117,29 @@ async function run() {
       const id = req.params.id;
       const query = {_id: new ObjectId(id)}
       const result = await userCollection.deleteOne(query)
+      res.send(result)
+    })
+
+    //for getting cart item
+    app.get('/carts', async(req, res) => {
+      const email = req.query.email
+      const query = {email:email}
+      const result = await cartCollection.find(query).toArray()
+      res.send(result)
+    })
+
+    //for adding item to cart 
+    app.post('/carts', async(req, res) => {
+      const cartItem = req.body;
+      const result = await cartCollection.insertOne(cartItem)
+      res.send(result)
+    })
+
+    //for deleting cart item
+    app.delete('/carts/:id', async(req, res) => {
+      const id = req.params.id;
+      const query = {_id: new ObjectId(id)}
+      const result = await cartCollection.deleteOne(query)
       res.send(result)
     })
 
