@@ -1,10 +1,12 @@
+require('dotenv').config();
 const express = require('express')
 const app = express();
 const cors = require('cors')
 const jwt = require('jsonwebtoken')
+const stripe = require('stripe')(process.env.STRIPE_secret_key)
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const port = process.env.PORT || 5000;
-require('dotenv').config();
+
 
 app.use(cors());
 app.use(express.json());
@@ -37,6 +39,7 @@ async function run() {
     const cartCollection = client.db("techMed").collection("carts")
     const bookingCollection = client.db("techMed").collection("drbooking")
     const contactCollection = client.db("techMed").collection("contact")
+    const paymentCollection = client.db("techMed").collection("payments")
 
     //middlewares
     const verifyToken = (req, res, next) => {
@@ -65,11 +68,38 @@ async function run() {
       }
       next();
     }
+
     //for jwt related api
     app.post('/jwt', async(req, res) =>{
       const user = req.body;
       const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {expiresIn:'1hr'})
       res.send({token})
+    })
+
+    //payment intent
+    app.post('/create-payment-intent', async(req, res) => {
+      const {price} = req.body
+      const amount = parseInt(price * 100)
+      console.log(amount, 'total amount')
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: amount,
+        currency: 'usd',
+        payment_method_types: ['card'] 
+      })
+      res.send({
+        clientSecret: paymentIntent.client_secret
+      })
+    })
+
+    app.post('/payments', async(req, res) =>{
+      const payment = req.body
+      const paymentResult = await paymentCollection.insertOne(payment)
+      console.log('payment info', payment)
+      const query = {_id: {
+        $in:payment.cartIds.map(id => new ObjectId(id))
+      }}
+      const deleteResult = await cartCollection.deleteMany(query)
+      res.send({paymentResult, deleteResult})
     })
 
     //for getting all blogs data endpoint
@@ -85,20 +115,36 @@ async function run() {
     })
 
     //for getting doctor list data endpoint
-    app.get('/drlists', verifyToken, verifyAdmin, async(req, res) => {
+    app.get('/drlists', async(req, res) => {
       const result = await doctorsCollection.find().toArray()
       res.send(result)
     })
 
-    //booking doctor appointment data endpoint
+    //getting booking data
+    app.get('/drbooking', async(req, res) => {
+      const email = req.query.email
+      const query = {email:email}
+      const result = await bookingCollection.find(query).toArray()
+      res.send(result)
+    })
+
+    //post booking doctor appointment data endpoint
     app.post('/drbooking', async(req, res) => {
       const bookingItem = req.body;
       const result = await bookingCollection.insertOne(bookingItem)
       res.send(result)
     })
+    
+    //delete appointment data
+    app.delete('/drbooking/:id', async(req, res) => {
+      const id = req.params.id;
+      const query = {_id: new ObjectId(id)}
+      const result = await bookingCollection.deleteOne(query)
+      res.send(result)
+    })
 
     //for getting doctor details data enpoint
-    app.get('/drlists/:id',verifyToken, verifyAdmin, async(req,res) =>{
+    app.get('/drlists/:id', async(req,res) =>{
       const id = req.params.id;
       // console.log(id)
       const query = {_id: new ObjectId(id)}
@@ -106,12 +152,14 @@ async function run() {
       res.send(result)
     })
 
-    //for doctor booking post data api endpoint
-    app.post('/drlists', async(req, res) => {
-      const bookingItem = req.body;
-      const result = await doctorsCollection.insertOne(bookingItem)
-      res.send(result)
-    })
+    // //for doctor booking post data api endpoint
+    // app.post('/drlists', async(req, res) => {
+    //   const bookingItem = req.body;
+    //   const result = await doctorsCollection.insertOne(bookingItem)
+    //   res.send(result)
+    // })
+
+    
 
     //for posting doctor info data endpoint
     app.post('/drlists', async(req, res) => {
@@ -160,7 +208,7 @@ async function run() {
     })
 
     //for admin check api
-    app.get('/users/admin/:email', verifyToken, verifyAdmin, async(req, res) => {
+    app.get('/users/admin/:email', verifyToken, async(req, res) => {
       const email = req.params.email;
       if(email !== req.decoded.email){
         return res.status(403).send({message:'forbidden access'})
@@ -175,7 +223,7 @@ async function run() {
     })
 
     //for updating user role data endpoint
-    app.patch('/users/admin/:id', verifyToken, verifyAdmin, async(req, res) => {
+    app.patch('/users/admin/:id', async(req, res) => {
       const id = req.params.id;
       const filter = {_id: new ObjectId(id)}
       const updatedDoc = {
@@ -188,7 +236,7 @@ async function run() {
     })
 
     //for user deleting data endpoint
-    app.delete('/users/:id', verifyToken, verifyAdmin, async(req, res) =>{
+    app.delete('/users/:id', verifyToken, async(req, res) =>{
       const id = req.params.id;
       const query = {_id: new ObjectId(id)}
       const result = await userCollection.deleteOne(query)
