@@ -91,6 +91,7 @@ async function run() {
       })
     })
 
+    //payment post related api
     app.post('/payments', async(req, res) =>{
       const payment = req.body
       const paymentResult = await paymentCollection.insertOne(payment)
@@ -100,6 +101,16 @@ async function run() {
       }}
       const deleteResult = await cartCollection.deleteMany(query)
       res.send({paymentResult, deleteResult})
+    })
+
+    //payment getting api
+    app.get('/payments/:email',verifyToken, async(req, res) =>{
+      const query = {email: req.params.email}
+      if(req.params.email !== req.decoded.email){
+        return res.status(403).send({message:'forbidden access'})
+      }
+      const result = await paymentCollection.find().toArray()
+      res.send(result)
     })
 
     //for getting all blogs data endpoint
@@ -277,6 +288,58 @@ async function run() {
       const subscriber = req.body;
       const result =await contactCollection.insertOne(subscriber);
       res.send(result)
+    })
+
+    //Dashboard related api
+    app.get('/admin-stats', async(req, res) => {
+      const users = await userCollection.estimatedDocumentCount()
+      const doctors = await doctorsCollection.estimatedDocumentCount()
+      const tests = await testCollection.estimatedDocumentCount()
+      const drbookings = await bookingCollection.estimatedDocumentCount()
+      const lab = await centerCollection.estimatedDocumentCount()
+      const testsDone = await paymentCollection.estimatedDocumentCount()
+      const result = await paymentCollection.aggregate([
+        {
+          $group: {
+            _id:null,
+            totalRevenue: {
+              $sum: '$price'
+            }
+          }
+        }
+      ]).toArray()
+      const revenue = result.length > 0 ? result[0].totalRevenue : 0;
+      res.send({
+        users,
+        doctors,
+        tests,
+        drbookings,
+        lab,
+        testsDone,
+        revenue
+      })
+    })
+
+    app.get('/user-stats', async(req, res) => {
+      const drbookings = await bookingCollection.estimatedDocumentCount()
+      const testsDone = await paymentCollection.estimatedDocumentCount()
+      // const result = await paymentCollection.aggregate([
+      //   {
+      //     $group: {
+      //       _id:null,
+      //       totalRevenue: {
+      //         $sum: '$price'
+      //       }
+      //     }
+      //   }
+      // ]).toArray()
+      const payments = await paymentCollection.find().toArray();
+      const revenue = payments.reduce((total, item) => total + item.price, 0)
+      res.send({
+        drbookings,
+        testsDone,
+        revenue
+      })
     })
 
     await client.db("admin").command({ ping: 1 });
