@@ -187,7 +187,13 @@ async function run() {
 
     //for getting all tests list data endpoint
     app.get('/test', async(req, res) => {
-      const result = await testCollection.find().toArray()
+      const page = parseInt(req.query.page)
+      const size = parseInt(req.query.size)
+      console.log('pagination query', req.query)
+      const result = await testCollection.find()
+      .skip(page * size)
+      .limit(size)
+      .toArray()
       res.send(result)
     })
 
@@ -340,6 +346,12 @@ async function run() {
         testsDone,
         revenue
       })
+    })
+
+    //for pagination 
+    app.get('/productsCount', async(req, res) => {
+      const count = await testCollection.estimatedDocumentCount();
+      res.send({count})
     })
 
     await client.db("admin").command({ ping: 1 });
