@@ -131,6 +131,12 @@ async function run() {
       res.send(result)
     })
 
+    //load all booking data to admin dashboard
+    app.get('/drbooking', async(req, res) => {
+      const result = await bookingCollection.find().toArray()
+      res.send(result)
+    })
+
     //getting booking data
     app.get('/drbooking', async(req, res) => {
       const email = req.query.email
@@ -154,12 +160,47 @@ async function run() {
       res.send(result)
     })
 
+    //for updating booking status from admin dashboard
+    app.patch('/drbooking/:id', async(req, res) =>{
+      const id = req.params.id;
+      // console.log(id)
+      const filter = {_id: new ObjectId(id)}
+      const updateBooking = req.body;
+      const updateDoc = {
+        $set: {
+          status: updateBooking.status
+        }
+      }
+      const result = await bookingCollection.updateOne(filter, updateDoc)
+      res.send(result)
+    })
+
     //for getting doctor details data enpoint
     app.get('/drlists/:id', async(req,res) =>{
       const id = req.params.id;
       // console.log(id)
       const query = {_id: new ObjectId(id)}
       const result = await doctorsCollection.findOne(query)
+      res.send(result)
+    })
+    //for updating doctor info
+    app.put('/drlists/:id', async(req, res) => {
+      const id = req.params.id;
+      const filter = {_id: new ObjectId(id)}
+      const options = {upsert:true}
+      const updatedDoctor = req.body;
+      const JobsPost = {
+        $set: {
+          dname: updatedDoctor.dname, 
+          degree: updatedDoctor.degree, 
+          specialist: updatedDoctor.specialist, 
+          photo: updatedDoctor.photo, 
+          chamber: updatedDoctor.chamber,
+          contact: updatedDoctor.contact, 
+          details: updatedDoctor.details
+        }
+      }
+      const result = await doctorsCollection.updateOne(filter, JobsPost, options)
       res.send(result)
     })
 
