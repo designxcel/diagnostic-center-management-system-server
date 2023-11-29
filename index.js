@@ -119,6 +119,15 @@ async function run() {
         res.send(result)
     })
 
+    //getting individual blog data
+    app.get('/blogs/:id', async(req,res) =>{
+      const id = req.params.id;
+      // console.log(id)
+      const query = {_id: new ObjectId(id)}
+      const result = await blogsCollection.findOne(query)
+      res.send(result)
+    })
+
     //for getting all reviews data endpoint
     app.get('/reviews', async(req,res) => {
         const result = await reviewsCollection.find().toArray()
@@ -128,6 +137,14 @@ async function run() {
     //for getting doctor list data endpoint
     app.get('/drlists', async(req, res) => {
       const result = await doctorsCollection.find().toArray()
+      res.send(result)
+    })
+
+    //delete doctors data endpoint
+    app.delete('/drlists/:id', async(req, res) => {
+      const id = req.params.id;
+      const query = {_id: new ObjectId(id)}
+      const result = await doctorsCollection.deleteOne(query)
       res.send(result)
     })
 
@@ -254,6 +271,21 @@ async function run() {
       // console.log(id)
       const query = {_id: new ObjectId(id)}
       const result = await testCollection.findOne(query)
+      res.send(result)
+    })
+
+    //post test data endpoint
+    app.post('/test', async(req, res) => {
+      const testItem = req.body;
+      const result = await testCollection.insertOne(testItem)
+      res.send(result)
+    })
+
+    //delete test items data endpoint
+    app.delete('/test/:id', async(req, res) => {
+      const id = req.params.id;
+      const query = {_id: new ObjectId(id)}
+      const result = await testCollection.deleteOne(query)
       res.send(result)
     })
 
