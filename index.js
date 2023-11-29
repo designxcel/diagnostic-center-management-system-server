@@ -43,7 +43,7 @@ async function run() {
 
     //middlewares
     const verifyToken = (req, res, next) => {
-      console.log('inside verify token', req.headers);
+      // console.log('inside verify token', req.headers);
       if(!req.headers.authorization){
         return res.status(401).send({message: 'unauthorized access'});
       }
@@ -253,9 +253,9 @@ async function run() {
 
       const query = {
         $or: [
-          { name: { $regex: searchRegex } },
-          { category: { $regex: searchRegex } },
-          { center: { $regex: searchRegex } },
+          { name: { $regexp: searchRegex } },
+          { category: { $regexp: searchRegex } },
+          { center: { $regexp: searchRegex } },
         ],
       };
       const result = await testCollection.find(query)
