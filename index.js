@@ -253,16 +253,16 @@ async function run() {
 
       const query = {
         $or: [
-          { name: { $regexp: searchRegex } },
-          { category: { $regexp: searchRegex } },
-          { center: { $regexp: searchRegex } },
+          { name: { $regex: searchRegex } },
+          { category: { $regex: searchRegex } },
+          { center: { $regex: searchRegex } },
         ],
       };
-      const result = await testCollection.find(query)
+      const result = await testCollection.find()
       .skip(page * size)
       .limit(size)
       .toArray()
-      res.json(result)
+      res.send(result)
     })
 
     //for getting test details data endpoint
