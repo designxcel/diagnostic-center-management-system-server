@@ -248,21 +248,21 @@ async function run() {
       const page = parseInt(req.query.page)
       const size = parseInt(req.query.size)
       const searchQuery = req.query.search || ''; 
-      // console.log('Received search query:', search);
+      console.log('Received search query:', search);
       const searchRegex = new RegExp(searchQuery, 'i');
 
       const query = {
         $or: [
           { name: { $regex: searchRegex } },
           { category: { $regex: searchRegex } },
-          { center: { $regex: searchRegex } },
         ],
       };
-      const result = await testCollection.find()
+
+      const result = await testCollection.find(query)
       .skip(page * size)
       .limit(size)
       .toArray()
-      res.send(result)
+      res.json(result)
     })
 
     //for getting test details data endpoint
