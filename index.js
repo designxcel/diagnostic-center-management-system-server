@@ -245,10 +245,11 @@ async function run() {
 
     //for getting all tests list data endpoint
     app.get('/test', async(req, res) => {
+      // console.log('pagination query', req.query)
       const page = parseInt(req.query.page)
       const size = parseInt(req.query.size)
-      const searchQuery = req.query.search || ''; 
-      console.log('Received search query:', search);
+      // console.log("pagination result", page, size)
+      const searchQuery = req.query.search || '';
       const searchRegex = new RegExp(searchQuery, 'i');
 
       const query = {
@@ -257,6 +258,7 @@ async function run() {
           { category: { $regex: searchRegex } },
         ],
       };
+      console.log(query)
 
       const result = await testCollection.find(query)
       .skip(page * size)
@@ -264,6 +266,7 @@ async function run() {
       .toArray()
       res.json(result)
     })
+
 
     //for getting test details data endpoint
     app.get('/test/:id', async(req,res) =>{
